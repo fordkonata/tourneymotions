@@ -454,7 +454,9 @@ public class Bracket {
             while (!simulatedPool.isLosersFinished()) for (Match losersMatch : simulatedPool.getLosersSide().values()) autoDeclareWinner(losersMatch);
         }
         //finishes off each player and calculates their
-        for (Player player : orderedPlayerMap.keySet()) finishPlayer(player, player.getGameMatchHistory(gameName).get(player.getGameMatchHistory(gameName).size() - 1));
+        for (Player player : orderedPlayerMap.keySet())  {
+            finishPlayer(player, player.getGameMatchHistory(gameName).get(player.getGameMatchHistory(gameName).size() - 1));
+        }
 
         for (Player player : orderedPlayerMap.keySet()) player.applyFinalPoints(gameName);
     }
@@ -465,12 +467,12 @@ public class Bracket {
     public String getFinalPlacements() {
         StringBuilder placementString = new StringBuilder();
         NavigableMap<Integer, ArrayList<Player>> printingMap = new TreeMap<>();
-        //stream all of the playermap entries into
+
+        //stream all of the playermap entries into a printable list
         orderedPlayerMap.forEach((player, value) -> printingMap.computeIfAbsent(player.getPlayerPlacement(gameName), p -> new ArrayList<>()).add(player));
 
-        for (Player finishedPlayer : orderedPlayerMap.keySet()) {
-            if (finishedPlayer.getPlayerPlacement(gameName) == null) System.out.println("arrived " + finishedPlayer.getGameMatchHistory(gameName));
-            placementString.append("|| " + finishedPlayer.getNickname() + " " + "Placement: " + finishedPlayer.getPlayerPlacement(gameName).toString() + " ||\n");
+        for (ArrayList<Player> position : printingMap.values()) {
+            for (Player finishedPlayer : position) placementString.append("|| " + finishedPlayer.getNickname() + " " + "Placement: " + finishedPlayer.getPlayerPlacement(gameName).toString() + " ||\n");
         }
         return placementString.toString();
     }

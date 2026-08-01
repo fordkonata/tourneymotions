@@ -143,7 +143,7 @@ public final class Player implements Comparable<Player> {
         this.setPlayerTier(gameName);
     }
 
-    public void setPlayerPlacement(String gameName, Integer position) { this.tempPointsValues.put(gameName, position); }
+    public void setPlayerPlacement(String gameName, Integer position) { this.playerPlacementMap.put(gameName, position); }
 
     @Override
     public String toString() {
