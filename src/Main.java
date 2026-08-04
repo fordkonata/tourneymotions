@@ -168,7 +168,7 @@ public class Main {
                                     simulateRetrievedBracket.getAllMatchesByID().values().forEach(m -> System.out.println( "Stage: " +
                                             m.getParentPool().getPoolStage() + " | " + "Pool: " + m.getParentPool().poolName + " | " +  "Side: " +
                                             m.getMatchSide() + " | " + m .getMatchPosition() + " Winner: " +
-                                            (m.getWinner() != null ? m.getWinner().getNickname() : "NULL")));
+                                            (m.getWinner() != null ? m.getWinner() : "NULL")));
                                     System.out.println(simulateRetrievedBracket.getFinalPlacements());
                                 case "0":
                                     break;
@@ -402,7 +402,7 @@ public class Main {
         haitani.setPlayerPoints("Street Fighter 6", 1600);
         haitani.setPlayerTier("Street Fighter 6");
         Player craime = new Player("", "Craime");
-        craime.setPlayerPoints("Street Fighter 6", 1600);
+        craime.setPlayerPoints("Street Fighter 6", 2000);
         craime.setPlayerTier("Street Fighter 6");
         Player torimeshi = new Player("", "Torimeshi");
         torimeshi.setPlayerPoints("Street Fighter 6", 1600);
@@ -513,7 +513,7 @@ public class Main {
         kingsvega.setPlayerPoints("Street Fighter 6", 1600);
         kingsvega.setPlayerTier("Street Fighter 6");
         Player urielVelorio = new Player("", "UrielVelorio");
-        urielVelorio.setPlayerPoints("Street Fighter 6", 1600);
+        urielVelorio.setPlayerPoints("Street Fighter 6", 1400);
         urielVelorio.setPlayerTier("Street Fighter 6");
         Player squall = new Player("", "Squall");
         squall.setPlayerPoints("Street Fighter 6", 1600);

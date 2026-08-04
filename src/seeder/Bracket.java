@@ -13,6 +13,7 @@ public class Bracket {
     private Integer currentPoolStageMarker = 1;
     private Player bracketWinner = null;
     private NavigableMap<Integer, Integer> totalLosersRoundEachStage = new TreeMap<>();
+    private NavigableMap<Integer, NavigableMap<Integer, Integer>> playersEliminatedCountMap = new TreeMap<>(); //organize and saves the number of eliminated players for each stage.
     private NavigableMap<Integer, NavigableMap<Integer, Pool>> bracketStagesMap = new TreeMap<>(); //contains each map for each pool stage
     private final int bracketTier = 5;
     private final NavigableMap<Integer, Match> allMatchesByID = new TreeMap<>();
@@ -23,7 +24,7 @@ public class Bracket {
 
     public Bracket(String tournament_name, ArrayList<Player> entrants, int pool_size, String gameName) {
         if (entrants.size() < 16) throw new IllegalStateException("The bracket size: " + entrants.size() + "is too small.");
-        this.bracketName = tournament_name;
+        bracketName = tournament_name;
         this.gameName = gameName;
         int total_points = 0;
          for (Player player : entrants) {
@@ -112,14 +113,13 @@ public class Bracket {
         boolean maxFound = false;
         while (!maxFound) {
             if (!testPool.getLosersSide().containsKey(roundTracker)) {
-                this.totalLosersRoundsCount += (roundTracker - 100) / 100;
+                totalLosersRoundsCount += (roundTracker - 100) / 100;
                 maxFound = true;
             }
             roundTracker += 100;
         }
-//        Integer copyOfLosersRounds = this.totalLosersRoundsCount;
-//        this.totalLosersRoundEachStage.put(currentPoolStageMarker, copyOfLosersRounds);
-
+        NavigableMap<Integer, Integer> nestedPlayersEliminatedMap = new TreeMap<>();
+        playersEliminatedCountMap.put(currentPoolStageMarker, nestedPlayersEliminatedMap);
     }
 
     //this method starts from round 2 and creates the winners side matches
@@ -154,7 +154,7 @@ public class Bracket {
             consolidationMarker = 0;
         }
 
-        else if (this.currentPoolStageMarker != 1) {
+        else if (currentPoolStageMarker != 1) {
             matchPositionMarker = 201;
             maxMatchesInRound = pool.getInitialPoolSize();
             losersRounds += 2;
@@ -164,7 +164,7 @@ public class Bracket {
         for (int i = 0; i < losersRounds + 1; i++) {
             while (matchPositionMarker % 100 <= maxMatchesInRound) {
                 Match newMatch = new Match(matchPositionMarker, pool, "losers", this);
-                newMatch.setActualMatchRound(i + this.totalLosersRoundsCount);
+                newMatch.setActualMatchRound(i + 1 + totalLosersRoundsCount);
                 pool.addLosersMatch(newMatch);
                 matchPositionMarker++;
             }
@@ -264,7 +264,7 @@ public class Bracket {
         int poolMatchMaxCount = 1;
         boolean playerParity = false;
 
-        Pool newPool = new Pool("Pool " + totalBracketPoolCountMark, this, this.currentPoolStageMarker);
+        Pool newPool = new Pool("Pool " + totalBracketPoolCountMark, this, currentPoolStageMarker);
         Integer subRoundMarker = 101;
         for (Pool pool : activePools.values()) {
             //If the new pool size goes above the maximum match count, create another pool
@@ -274,7 +274,7 @@ public class Bracket {
                 subRoundMarker = 101;
                 poolMatchMaxCount = 1;
                 newPoolKey++;
-                newPool = new Pool("Pool " + totalBracketPoolCountMark, this, this.currentPoolStageMarker);
+                newPool = new Pool("Pool " + totalBracketPoolCountMark, this, currentPoolStageMarker);
                 newPoolMap.put(newPoolKey, newPool); //***TODO MAKE SURE THIS BELONGS HERE
             }
 
@@ -289,6 +289,7 @@ public class Bracket {
                 newPool.addLosersMatch(newLosersMatch);
                 playerParity = true;
                 newPool.incrementInitialPoolSize();
+                newLosersMatch.setActualMatchRound(totalLosersRoundsCount);
             }
             else {
                 Match existingWinnersMatch = newPool.getWinnersSide().get(subRoundMarker);
@@ -309,7 +310,6 @@ public class Bracket {
         for (Pool mergedNewPool : bracketStagesMap.get(currentPoolStageMarker).values()) {
             createWinnersSideMatches(mergedNewPool);
             createLosersSideMatches(mergedNewPool);
-            System.out.println(mergedNewPool);
         }
         Pool testPool =  bracketStagesMap.get(currentPoolStageMarker).firstEntry().getValue();
         int roundTracker = 101;
@@ -317,26 +317,57 @@ public class Bracket {
 
         while (!maxFound) {
             if (!testPool.getLosersSide().containsKey(roundTracker)) {
-                this.totalLosersRoundsCount += (roundTracker - 100) / 100;
+                totalLosersRoundsCount += (roundTracker - 100) / 100;
                 maxFound = true;
             }
             roundTracker += 100;
         }
-//        Integer copyOfLosersRounds = this.totalLosersRoundsCount;
-//        this.totalLosersRoundEachStage.put(currentPoolStageMarker, copyOfLosersRounds);
+        NavigableMap<Integer, Integer> nestedPlayersEliminatedMap = new TreeMap<>();
+        playersEliminatedCountMap.put(currentPoolStageMarker,nestedPlayersEliminatedMap);
     }
 
+    //***TODO fix this function based on claude's recommendations
     public int calculatePlacement(Match match) {
+
         int eliminatedRound = match.getActualMatchRound();
-        if (match.getMatchPosition() == 0)  eliminatedRound = this.totalLosersRoundsCount;
-        return (int) (Math.pow(2, 1 + (double) (this.totalLosersRoundsCount - eliminatedRound) / 2) + 1);
+
+        int eliminatedRoundDiff = totalLosersRoundsCount - eliminatedRound;
+
+        // Losers Finals loser
+        if (eliminatedRoundDiff == 1) return 3;
+
+        // Losers Semis loser
+        if (eliminatedRoundDiff == 2) return 4;
+
+        int k = eliminatedRoundDiff / 2;
+
+        int placement;
+        if ((eliminatedRoundDiff & 1) == 0) placement = (1 << (k + 1)) + 1;
+        else placement = 3 * (1 << k) + 1;
+
+        System.out.printf(
+                "Placement=%d  ActualRound=%d  Diff=%d%n",
+                placement,
+                match.getActualMatchRound(),
+                eliminatedRoundDiff
+        );
+
+        return placement;
     }
 
     //After player completes their run in the tournament
     //FINISHED
     public void finishPlayer(Player player, Match lastMatch) {
-        // calculate placement once and reuse
-        int placement = calculatePlacement(lastMatch);
+        int placement;
+
+        //handles grand finals winner and loser
+        if (lastMatch.getMatchPosition() == 0) {
+            if (player == lastMatch.getWinner()) placement = 1;
+            else placement = 2;
+        }
+        // calculate placement once and reuse if the player's last match was not grand finals
+        else placement = calculatePlacement(lastMatch);
+
 
         //Tournament win probability vs avg
         double winProbVsAvg = 1 / (1 + Math.pow(10, -1 * ((double) (player.getPoints(gameName) - this.bracketAvgPoints) / 500)));
@@ -365,8 +396,10 @@ public class Bracket {
 
         //Final tournament awards formula
         int pointsChange = (int) (baseAward * 1.5 * (actualPlacementMod - expectedPlacementMod) * tournamentDifficultyMod);
-
         player.setPlayerPlacement(gameName, placement);
+        if (lastMatch.getMatchPosition() == 0) {
+            System.out.println(player + "placed " + placement);
+        }
         player.finalPointsChange(gameName, pointsChange);
     }
 
@@ -402,26 +435,23 @@ public class Bracket {
             //if this is the final pool of the tournament, finish the two remaining players and complete the tournament.
             if(bracketStagesMap.get(currentPoolStageMarker).size() <= 1) {
                 Match grandFinals = new Match(targetPool.getWinnersSideFinalist(), targetPool.getLosersSideFinalist(), 0, targetPool, "winners", this);
-                Player winningPlayer;
-                Player losingPlayer;
+                allMatchesByID.put(grandFinals.getMatchId(), grandFinals);
 
                 double expectedResult = (1 / (1 + Math.pow(10, -1 * ((double) (grandFinals.getP1().getPoints(gameName) - grandFinals.getP2().getPoints(gameName)) / 500))));
                 double random = Math.random();
 
                 //Randomly determines which player wins by win probability
                 if (random < expectedResult) {
-                    winningPlayer = grandFinals.getP1();
-                    losingPlayer = grandFinals.getP2();
+                    grandFinals.setWinner(grandFinals.getP1());
                 }
                 else {
-                    winningPlayer = grandFinals.getP2();
-                    losingPlayer = grandFinals.getP1();
+                    grandFinals.setWinner(grandFinals.getP2());
                 }
 
                 //Determine bracket winner and complete the bracket.
-                this.finishPlayer(winningPlayer, grandFinals);
-                this.finishPlayer(losingPlayer,grandFinals);
-                bracketWinner = winningPlayer;
+                this.finishPlayer(grandFinals.getWinner(), grandFinals);
+                this.finishPlayer(grandFinals.getLoser(),grandFinals);
+                bracketWinner = grandFinals.getWinner();
             }
             else mergePools(this.bracketStagesMap.get(stage));
         }
@@ -454,8 +484,8 @@ public class Bracket {
             while (!simulatedPool.isLosersFinished()) for (Match losersMatch : simulatedPool.getLosersSide().values()) autoDeclareWinner(losersMatch);
         }
         //finishes off each player and calculates their
-        for (Player player : orderedPlayerMap.keySet())  {
-            finishPlayer(player, player.getGameMatchHistory(gameName).get(player.getGameMatchHistory(gameName).size() - 1));
+        for (Player player : orderedPlayerMap.keySet()) {
+            if (player.getPlayerPlacement(gameName) == null) finishPlayer(player, player.getGameMatchHistory(gameName).get(player.getGameMatchHistory(gameName).size() - 1));
         }
 
         for (Player player : orderedPlayerMap.keySet()) player.applyFinalPoints(gameName);
@@ -464,24 +494,30 @@ public class Bracket {
 
     public Pool findPool(Integer stage, Integer poolNumber) { return this.bracketStagesMap.get(stage).get(poolNumber); }
 
+    //organizes and outputs all entrant placements into a printable string.
     public String getFinalPlacements() {
         StringBuilder placementString = new StringBuilder();
         NavigableMap<Integer, ArrayList<Player>> printingMap = new TreeMap<>();
 
-        //stream all of the playermap entries into a printable list
+        // fill the entrants into an ordered printable list from highest placing player to lowest placing player.
         orderedPlayerMap.forEach((player, value) -> printingMap.computeIfAbsent(player.getPlayerPlacement(gameName), p -> new ArrayList<>()).add(player));
 
-        for (ArrayList<Player> position : printingMap.values()) {
-            for (Player finishedPlayer : position) placementString.append("|| " + finishedPlayer.getNickname() + " " + "Placement: " + finishedPlayer.getPlayerPlacement(gameName).toString() + " ||\n");
-        }
+        for (ArrayList<Player> position : printingMap.values())
+            for (Player finishedPlayer : position)
+                placementString.append("|| " + finishedPlayer.getNickname() + " " + "Placement: " + finishedPlayer.getPlayerPlacement(gameName).toString() + " ||\n");
+
+//        System.out.println("total rounds losers" + totalLosersRoundsCount );
+
         return placementString.toString();
     }
 
     public String getGameName() { return this.gameName; }
 
-    public Player getBracketWinner() {return this.bracketWinner; }
+    public Player getBracketWinner() { return this.bracketWinner; }
 
-    public NavigableMap<Integer, NavigableMap<Integer, Pool>> getBracketStagesMap() { return  bracketStagesMap; }
+    public void incrementPlayersEliminatedMap(Integer stage, Integer round) { this.playersEliminatedCountMap.get(stage).merge(round, 1, Integer::sum); }
+
+    public NavigableMap<Integer, NavigableMap<Integer, Pool>> getBracketStagesMap() { return bracketStagesMap; }
 
     public NavigableMap<Integer, Match> getAllMatchesByID() { return this.allMatchesByID; }
 
