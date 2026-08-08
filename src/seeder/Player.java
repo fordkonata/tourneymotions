@@ -19,7 +19,7 @@ public final class Player implements Comparable<Player> {
     public final HashMap<String, ArrayList<Match>> matchHistory = new HashMap<>(); //Need to change this so that I can filter and sort by, tournament,  opposing player tier, and points gained
     public final HashMap<String, Integer> playerPointsMap = new HashMap<>(); //contains the players points and tier for each game. The first index in a hash value is the points, the second is the tier.
     public final HashMap<String, Integer> playerTierMap = new HashMap<>();//holds the player tier for each game of the player.
-    private final HashMap<String, Integer> playerPlacementMap = new HashMap<>();
+    private final HashMap<String, Integer> gamePlacementMap = new HashMap<>();
     private final Random random = new Random();
     private final HashMap<String, Integer> tournamentMatchesSum = new HashMap<>(); //holds the sum of the player's points until the bracket is over
     private final Integer player_id; //maybe make a global field for player_id, so I can cast rand to it?
@@ -97,7 +97,10 @@ public final class Player implements Comparable<Player> {
         this.tempPointsValues.merge(gameName, matchesPointsSum + finalChange, Integer::sum);
     }
 
-    public void applyFinalPoints(String gameName) { this.playerPointsMap.put(gameName, tempPointsValues.get(gameName));}
+    public void applyFinalPoints(String gameName) {
+        this.playerPointsMap.put(gameName, tempPointsValues.get(gameName));
+        setPlayerTier(gameName);
+    }
 
 
 
@@ -125,7 +128,7 @@ public final class Player implements Comparable<Player> {
 
     public String getNickname() { return playerNickname; }
 
-    public Integer getPlayerPlacement(String gameName) {return this.playerPlacementMap.get(gameName); }
+    public Integer getPlayerPlacement(String gameName) { return this.gamePlacementMap.get(gameName); }
 
     public int getTier(String gameName) { return playerPointsMap.get(gameName); }
 
@@ -143,7 +146,7 @@ public final class Player implements Comparable<Player> {
         this.setPlayerTier(gameName);
     }
 
-    public void setPlayerPlacement(String gameName, Integer position) { this.playerPlacementMap.put(gameName, position); }
+    public void setPlayerPlacement(String gameName, Integer position) { this.gamePlacementMap.put(gameName, position); }
 
     @Override
     public String toString() {
