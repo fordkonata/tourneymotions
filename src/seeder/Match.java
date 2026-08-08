@@ -15,11 +15,11 @@ public final class Match {
     private final String matchGame;
     private final String matchSide;
     private final Pool parentPool; // need to organize at set a reference for parent pool probably need to shift some things
-    private final Random random = new Random();
     private final Bracket parentBracket;
     public static int total_matches_globally = 0;
 
     private void generateMatchId() {
+        Random random = new Random();
         Integer id;
         //random number generator for matchID for a bracket.
         do { id = random.nextInt(99999); }
@@ -34,7 +34,7 @@ public final class Match {
         this.matchSide = side;
         this.matchPosition = matchPosition;
         this.parentBracket = bracket;
-        this.matchGame = parentPool.parentbracket.getGameName();
+        this.matchGame = parentPool.parentBracket.getGameName();
         this.generateMatchId();
         total_matches_globally++;
     }
@@ -47,7 +47,7 @@ public final class Match {
         this.parentPool = pool;
         this.matchSide = side;
         this.parentBracket = bracket;
-        this.matchGame = parentPool.parentbracket.getGameName();
+        this.matchGame = parentPool.parentBracket.getGameName();
         this.generateMatchId();
         total_matches_globally++;
     }
@@ -60,7 +60,7 @@ public final class Match {
         this.matchSide = side;
         this.matchPosition = matchPosition;
         this.parentBracket = bracket;
-        this.matchGame = parentPool.parentbracket.getGameName();
+        this.matchGame = parentPool.parentBracket.getGameName();
         this.generateMatchId();
         total_matches_globally++;
     }
@@ -84,11 +84,19 @@ public final class Match {
 
     public String getMatchGame() {return this.matchGame; }
 
+    public int getMatchPoolStage() { return this.parentPool.getPoolStage(); }
+
     public Integer getMatchRound() {return this.matchPosition / 100; }
 
-    public void setPlayer1(Player p1) { this.player1 = p1; }
+    public void setPlayer1(Player p1) {
+        this.player1 = p1;
+        p1.updateBracketMatchHistory(matchGame, this);
+    }
 
-    public void setPlayer2(Player p2) { this.player2 = p2; }
+    public void setPlayer2(Player p2) {
+        this.player2 = p2;
+        player2.updateBracketMatchHistory(matchGame, this);
+    }
 
 
 

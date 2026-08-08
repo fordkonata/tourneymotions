@@ -156,19 +156,18 @@ public class Main {
                                     Bracket simulateRetrievedBracket = retrievedTournament.findBracket(simulateGameBracketString);
                                     System.out.println("Simulating bracket... ");
                                     int stageCount = 1;
-
-                                    while (simulateRetrievedBracket.getBracketWinner() == null) {
-                                        simulateRetrievedBracket.autoCompleteBracket(simulateRetrievedBracket.getBracketStagesMap().get(stageCount));
+                                    Boolean bracketDone = false;
+                                    while (!bracketDone) {
+                                        bracketDone = simulateRetrievedBracket.autoCompleteBracket(simulateRetrievedBracket.getBracketStagesMap().get(stageCount));
                                         stageCount++;
-//                                        System.out.println(simulateRetrievedBracket.getBracketStagesMap().get(stageCount));
                                     }
 
-                                    System.out.println("All matches size: " + simulateRetrievedBracket.getAllMatchesByID().size());
-                                    System.out.println("Processed matches: ");
-                                    simulateRetrievedBracket.getAllMatchesByID().values().forEach(m -> System.out.println( "Stage: " +
-                                            m.getParentPool().getPoolStage() + " | " + "Pool: " + m.getParentPool().poolName + " | " +  "Side: " +
-                                            m.getMatchSide() + " | " + m .getMatchPosition() + " Winner: " +
-                                            (m.getWinner() != null ? m.getWinner() : "NULL")));
+//                                    System.out.println("All matches size: " + simulateRetrievedBracket.getAllMatchesByID().size());
+//                                    System.out.println("Processed matches: ");
+//                                    simulateRetrievedBracket.getAllMatchesByID().values().forEach(m -> System.out.println( "Stage: " +
+//                                            m.getParentPool().getPoolStage() + " | " + "Pool: " + m.getParentPool().poolName + " | " +  "Side: " +
+//                                            m.getMatchSide() + " | " + m .getMatchPosition() + " Winner: " +
+//                                            (m.getWinner() != null ? m.getWinner() : "NULL")));
                                     System.out.println(simulateRetrievedBracket.getFinalPlacements());
                                 case "0":
                                     break;

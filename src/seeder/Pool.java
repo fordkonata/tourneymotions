@@ -13,7 +13,7 @@ import java.util.*;
 
 public class Pool {
     public String poolName = "empty"; //will eventually need another way to identify the pool. Also customizable pool names?????? */
-    public Bracket parentbracket;
+    public Bracket parentBracket;
     public ArrayList<Player> poolPlayers = new ArrayList<>();
     private Player winnersFinalist = null;
     private Player losersFinalist = null;
@@ -28,11 +28,11 @@ public class Pool {
     private final NavigableMap<Integer, Match> allActiveWinnersMatches = new TreeMap<>(); //contains all matches that have yet to be resolved, sorted by match position
     private final NavigableMap<Integer, Match> allActiveLosersMatches = new TreeMap<>();
     private int initialPoolSize = 0;
-    private final Integer  poolStage;
+    private final Integer poolStage;
 
     public Pool(String poolName, Bracket bracket, Integer stage) {
         this.poolName = poolName;
-        this.parentbracket = bracket;
+        this.parentBracket = bracket;
         this.poolStage = stage;
     }
 
@@ -44,13 +44,13 @@ public class Pool {
 
         //Add match histories to existing players in the match
         if(newWinnersMatch.getP1() != null && newWinnersMatch.getP2() != null) {
-            newWinnersMatch.getP1().updateMatchHistory(newWinnersMatch.getMatchGame(), newWinnersMatch);
-            newWinnersMatch.getP2().updateMatchHistory(newWinnersMatch.getMatchGame(), newWinnersMatch);
+            newWinnersMatch.getP1().updateBracketMatchHistory(newWinnersMatch.getMatchGame(), newWinnersMatch);
+            newWinnersMatch.getP2().updateBracketMatchHistory(newWinnersMatch.getMatchGame(), newWinnersMatch);
         }
         //if one of the player positions are currntly empty, just add to the other player position
-        else if (newWinnersMatch.getP1() != null) newWinnersMatch.getP1().updateMatchHistory(newWinnersMatch.getMatchGame(), newWinnersMatch);
-        else if (newWinnersMatch.getP2() != null) newWinnersMatch.getP2().updateMatchHistory(newWinnersMatch.getMatchGame(), newWinnersMatch);
-        parentbracket.getAllMatchesByID().put(newWinnersMatch.getMatchId(), newWinnersMatch);
+        else if (newWinnersMatch.getP1() != null) newWinnersMatch.getP1().updateBracketMatchHistory(newWinnersMatch.getMatchGame(), newWinnersMatch);
+        else if (newWinnersMatch.getP2() != null) newWinnersMatch.getP2().updateBracketMatchHistory(newWinnersMatch.getMatchGame(), newWinnersMatch);
+        parentBracket.getAllMatchesByID().put(newWinnersMatch.getMatchId(), newWinnersMatch);
     }
 
     public void addLosersMatch(Match newLosersMatch) {
@@ -58,13 +58,13 @@ public class Pool {
         allActiveLosersMatches.put(newLosersMatch.getMatchPosition(), newLosersMatch);
 
         if(newLosersMatch.getP1() != null && newLosersMatch.getP2() != null) {
-            newLosersMatch.getP1().updateMatchHistory(newLosersMatch.getMatchGame(), newLosersMatch);
-            newLosersMatch.getP2().updateMatchHistory(newLosersMatch.getMatchGame(), newLosersMatch);
+            newLosersMatch.getP1().updateBracketMatchHistory(newLosersMatch.getMatchGame(), newLosersMatch);
+            newLosersMatch.getP2().updateBracketMatchHistory(newLosersMatch.getMatchGame(), newLosersMatch);
         }
         //if one of the player positions are currntly empty, just add to the other player position
-        else if (newLosersMatch.getP1() != null) newLosersMatch.getP1().updateMatchHistory(newLosersMatch.getMatchGame(), newLosersMatch);
-        else if (newLosersMatch.getP2() != null) newLosersMatch.getP2().updateMatchHistory(newLosersMatch.getMatchGame(), newLosersMatch);
-        parentbracket.getAllMatchesByID().put(newLosersMatch.getMatchId(), newLosersMatch);
+        else if (newLosersMatch.getP1() != null) newLosersMatch.getP1().updateBracketMatchHistory(newLosersMatch.getMatchGame(), newLosersMatch);
+        else if (newLosersMatch.getP2() != null) newLosersMatch.getP2().updateBracketMatchHistory(newLosersMatch.getMatchGame(), newLosersMatch);
+        parentBracket.getAllMatchesByID().put(newLosersMatch.getMatchId(), newLosersMatch);
 
         //detect if the matcch added is the final losers match of the pool. If so, set it to its proper field.
         int winnersRounds = (int) (Math.log(initialPoolSize) / Math.log(2)) + 1;
@@ -79,13 +79,13 @@ public class Pool {
         allActiveWinnersMatches.put(newPrelimsMatch.getMatchPosition(), newPrelimsMatch);
 
         if(newPrelimsMatch.getP1() != null && newPrelimsMatch.getP2() != null) {
-            newPrelimsMatch.getP1().updateMatchHistory(newPrelimsMatch.getMatchGame(), newPrelimsMatch);
-            newPrelimsMatch.getP2().updateMatchHistory(newPrelimsMatch.getMatchGame(), newPrelimsMatch);
+            newPrelimsMatch.getP1().updateBracketMatchHistory(newPrelimsMatch.getMatchGame(), newPrelimsMatch);
+            newPrelimsMatch.getP2().updateBracketMatchHistory(newPrelimsMatch.getMatchGame(), newPrelimsMatch);
         }
         //if one of the player positions are currntly empty, just add to the other player position
-        else if (newPrelimsMatch.getP1() != null) newPrelimsMatch.getP1().updateMatchHistory(newPrelimsMatch.getMatchGame(), newPrelimsMatch);
-        else if (newPrelimsMatch.getP2() != null) newPrelimsMatch.getP2().updateMatchHistory(newPrelimsMatch.getMatchGame(), newPrelimsMatch);
-        parentbracket.getAllMatchesByID().put(newPrelimsMatch.getMatchId(), newPrelimsMatch);
+        else if (newPrelimsMatch.getP1() != null) newPrelimsMatch.getP1().updateBracketMatchHistory(newPrelimsMatch.getMatchGame(), newPrelimsMatch);
+        else if (newPrelimsMatch.getP2() != null) newPrelimsMatch.getP2().updateBracketMatchHistory(newPrelimsMatch.getMatchGame(), newPrelimsMatch);
+        parentBracket.getAllMatchesByID().put(newPrelimsMatch.getMatchId(), newPrelimsMatch);
     }
 
     public boolean isFinished() { return winnersFinished && losersFinished; }
@@ -382,7 +382,7 @@ public class Pool {
 
     public void matchUpdateWinners(Match prevMatch) {
         resolveMatch(prevMatch);
-        String gameName = parentbracket.getGameName();
+        String gameName = parentBracket.getGameName();
         Player winner = prevMatch.getWinner();
         Player loser = prevMatch.getLoser();
         //always remove the previous match from active matches
@@ -399,7 +399,6 @@ public class Pool {
             if (winnersSide.containsKey(newMatchPosition)) {
                 Match pendingMatch = winnersSide.get(newMatchPosition);
                 pendingMatch.setPlayer2(winner);
-                winner.updateMatchHistory(pendingMatch.getMatchGame(), pendingMatch);
             }
             //segment to check and indicate if prelims are done or not. One active match makes this false.
             boolean prelimsDone = true;
@@ -442,16 +441,14 @@ public class Pool {
 
             Match newMatch = winnersSide.get(newMatchPosition);
 
-
             if (subPositionIsEven) newMatch.setPlayer2(winner);
             else newMatch.setPlayer1(winner);
-            winner.updateMatchHistory(newMatch.getMatchGame(), newMatch);
         }
     }
 
     public void matchUpdateLosers(Match prevMatch) {
         resolveMatch(prevMatch);
-        String gameName = parentbracket.getGameName();
+        String gameName = parentBracket.getGameName();
         Player winner = prevMatch.getWinner();
         Player loser = prevMatch.getLoser();
         int prevMatchSubPosition = prevMatch.getMatchPosition() % 100;
@@ -466,14 +463,14 @@ public class Pool {
         // preliminaries drop to LR1
         if (prevMatch.getMatchSide().equals("preliminaries")) {
             losersMatchPosition = findPrelimLosersPosition(prevMatch);
-            Match newLosersMatch = new Match(loser, losersMatchPosition, 2, this, "losers", parentbracket);
+            Match newLosersMatch = new Match(loser, losersMatchPosition, 2, this, "losers", parentBracket);
             newLosersMatch.setActualMatchRound(1);
             addLosersMatch(newLosersMatch);
             return;
         }
 
         // calculate the amount of rounds in the pool to detect the losers finalist
-        int winnersRounds = (int) (Math.log(initialPoolSize) / Math.log(2)) + 1;
+        int winnersRounds = (int) (Math.log(this.initialPoolSize) / Math.log(2)) + 1;
 
         //**TODO Need to handle this case as well. unless it is a grand fnals match, this losers finalist proceeds to next pool
 
@@ -495,7 +492,6 @@ public class Pool {
                 Match existingLosersMatch = allActiveLosersMatches.get(allActiveLosersMatches.firstKey());
                 if (existingLosersMatch.getP1() == null) existingLosersMatch.setPlayer1(winner);
                 else existingLosersMatch.setPlayer2(winner);
-                loser.updateMatchHistory(existingLosersMatch.getMatchGame(), existingLosersMatch);
                 return;
             }
 
@@ -504,64 +500,64 @@ public class Pool {
                 int currentRoundMatchCount;
 
                 int exponent;
-
                 // Winners round drop routing
                 if(poolStage == 1) {
-                    if (!preliminaries.isEmpty()) exponent = Math.max(1, prevRound - 2);
-                    else exponent = Math.max(1, prevRound - 1);
+                    exponent = Math.max(1, prevRound - 2);
                     currentRoundMatchCount = initialPoolSize >> exponent;
-                    if (!preliminaries.isEmpty() && prevRound == 3)
-                        losersMatchPosition = 300 + (currentRoundMatchCount - prevMatchSubPosition + 1);
-                    else if (preliminaries.isEmpty() && prevRound == 2)
-                        losersMatchPosition = 200 + (currentRoundMatchCount - prevMatchSubPosition + 1);
-                    else {
-                        losersMatchPosition = 100 * (prevRound + 1) + (currentRoundMatchCount - prevMatchSubPosition + 1);
+                    if (!preliminaries.isEmpty()) {
+                        losersMatchPosition = switch (prevRound) {
+                            case 3 -> 300 + (currentRoundMatchCount - prevMatchSubPosition + 1);
+                            case 4 -> 500 + (currentRoundMatchCount - prevMatchSubPosition + 1);
+                            case 5 -> 700 + (currentRoundMatchCount - prevMatchSubPosition + 1);
+                            default -> 100 * (prevRound + 1) + (currentRoundMatchCount - prevMatchSubPosition + 1);
+                        };
                     }
+                    else losersMatchPosition = 100 * (prevRound + 1) + (currentRoundMatchCount - prevMatchSubPosition + 1);
                 }
 //                losersMatchPosition = 100 * (prevRound + 2) + (currentRoundMatchCount - prevMatchSubPosition + 1);
                 //Stage is greater than 2 so need to compensate for pre-populated losers rounds.
                 else {
                     exponent = Math.max(1, prevRound - 1);
-                    currentRoundMatchCount = (initialPoolSize >> exponent);
+                    currentRoundMatchCount = (this.initialPoolSize >> exponent);
                     if (prevRound == 1) currentRoundMatchCount *= 2;
                     losersMatchPosition = 100 * (prevRound + prevRound) + (currentRoundMatchCount - prevMatchSubPosition + 1);
                 }
             }
 
-            Match existingLosersMatch = losersSide.get(losersMatchPosition);
+            Match existingLosersMatch = this.losersSide.get(losersMatchPosition);
 
-            losersSide.get(losersMatchPosition - 1);
+            this.losersSide.get(losersMatchPosition - 1);
 
 
-            if (!preliminaries.isEmpty() && losersMatchPosition / 100 == 1) existingLosersMatch.setPlayer1(loser);
+            if (!this.preliminaries.isEmpty() && losersMatchPosition / 100 == 1) existingLosersMatch.setPlayer1(loser);
 
             else {
                 //if there is no previous losers match feeding into losers round 2, perform special case
-                if (prevRound == 1 && !preliminaries.isEmpty() && losersSide.get(losersMatchPosition - 100) == null) {
+                if (prevRound == 1 && !this.preliminaries.isEmpty() && this.losersSide.get(losersMatchPosition - 100) == null) {
                     if (prevPositionIsEven) existingLosersMatch.setPlayer2(loser);
 
                     else existingLosersMatch.setPlayer1(loser);
                 }
+
 
                 if (existingLosersMatch.getP1() == null) existingLosersMatch.setPlayer1(loser);
 
                 else existingLosersMatch.setPlayer2(loser);
 
             }
-            loser.updateMatchHistory(existingLosersMatch.getMatchGame(), existingLosersMatch);
         }
 
         // Losers consolidation rounds
         else {
             //If its prelims then we have to do special cases.
 
-            int poolExponent = Integer.numberOfTrailingZeros(initialPoolSize);
+            int poolExponent = Integer.numberOfTrailingZeros(this.initialPoolSize);
             if (poolStage == 1) {
-                if (!preliminaries.isEmpty() && prevRound == 1) {
+                if (!this.preliminaries.isEmpty() && prevRound == 1) {
                     losersMatchPosition = findLosersConsolidationPosition(prevMatch);
                 }
                 else {
-                    if (!preliminaries.isEmpty()) {
+                    if (!this.preliminaries.isEmpty()) {
                         if (prevRound % 2 != 0) {
                             if (!prevPositionIsEven) prevMatchSubPosition += 1;
                             prevMatchSubPosition = prevMatchSubPosition / 2;
@@ -587,16 +583,13 @@ public class Pool {
             }
 
 
-            Match existingLosersMatch =losersSide.get(losersMatchPosition);
+            Match existingLosersMatch = this.losersSide.get(losersMatchPosition);
 
             if (existingLosersMatch.getP2() == null) existingLosersMatch.setPlayer2(winner);
 
             else existingLosersMatch.setPlayer1(winner);
 
             //handles background work such as adding the match to the player history, updating active matches, and adding the match to the parent bracket.
-            winner.updateMatchHistory(existingLosersMatch.getMatchGame(), existingLosersMatch);
-            //increment the number  of players that have been eliminated from the bracket in the previous round.
-            parentbracket.incrementPlayersEliminatedMap(poolStage, prevMatch.getActualMatchRound());
         }
     }
 
@@ -619,6 +612,8 @@ public class Pool {
     public NavigableMap<Integer, Match> getPreliminaries() { return preliminaries; }
 
     public int getInitialPoolSize() { return initialPoolSize; }
+
+    public Bracket getParentBracket() { return parentBracket; }
 
     public Integer getPoolNumber() { return Integer.parseInt(poolName.split(" ")[1]); }
 

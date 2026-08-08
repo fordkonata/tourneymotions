@@ -10,19 +10,22 @@ import java.util.Random;
  */
 public final class Player implements Comparable<Player> {
     public String playerNickname;
-    public static HashMap<Integer, Player> globalPlayerMap = new HashMap<>(); // contains ALL THE PLAYERS ACROSS ALL GAMES
     private String realName = "empty";
     private int exp_factor;
     private int setsPlayed = 0;
     private int phone_number;
+    private HashMap<Tournament, HashMap<String, Integer>> pointsChangedHistory = new HashMap<>();
+    public static HashMap<Integer, Player> globalPlayerMap = new HashMap<>(); // contains ALL THE PLAYERS ACROSS ALL GAMES
     private HashMap <String, Integer> tempPointsValues = new HashMap<>();
-    public final HashMap<String, ArrayList<Match>> matchHistory = new HashMap<>(); //Need to change this so that I can filter and sort by, tournament,  opposing player tier, and points gained
+    private final  HashMap<Integer, HashMap<String, ArrayList<Match>>> playerTotalMatchHistory = new HashMap<>(); //Sorts the player's match history by tournamentID and game bracket
+    private final HashMap<String, ArrayList<Match>> bracketMatchHistory = new HashMap<>();  // Player's match history for a particular bracket
     public final HashMap<String, Integer> playerPointsMap = new HashMap<>(); //contains the players points and tier for each game. The first index in a hash value is the points, the second is the tier.
     public final HashMap<String, Integer> playerTierMap = new HashMap<>();//holds the player tier for each game of the player.
-    private final HashMap<String, Integer> gamePlacementMap = new HashMap<>();
+    private final HashMap<Integer, HashMap<String, Integer>> bracketPlacementMap = new HashMap<>(); //sorts player's placement by tournamentID and game bracket
     private final Random random = new Random();
+    private boolean placementFinalized = false;
     private final HashMap<String, Integer> tournamentMatchesSum = new HashMap<>(); //holds the sum of the player's points until the bracket is over
-    private final Integer player_id; //maybe make a global field for player_id, so I can cast rand to it?
+    private final Integer playerID; //maybe make a global field for player_id, so I can cast rand to it?
 
 
     private Integer generatePlayerId() {
@@ -40,27 +43,16 @@ public final class Player implements Comparable<Player> {
         this.playerNickname = playerNickname;
         this.playerPointsMap.put("Street Fighter 6", 800);
         this.playerTierMap.put("Street Fighter 6", 7);
-        this.player_id = generatePlayerId();
-        globalPlayerMap.put(player_id, this);
+        this.playerID = generatePlayerId();
+        globalPlayerMap.put(playerID, this);
     }
 
     @Override
-    public int compareTo(Player other) {
-        // Sort ascending by points for the game
-        int pointsCompare = Integer.compare(
-                this.getPoints("Street Fighter 6"),
-                other.getPoints("Street Fighter 6")
-        );
-
-        // Tiebreaker by nickname so no two players are ever considered equal
-        if (pointsCompare == 0) return this.getNickname().compareTo(other.getNickname());
-        return pointsCompare;
-    }
-
+    public int compareTo(Player other) { return Integer.compare(getPlayerID(), other.getPlayerID()); }
 
     //Calculates a percentage modifier based on matches played
     private double experienceFactorCalculator(String gameName) {
-        return Math.round(1 + (1.3 / (1+((8- this.playerTierMap.get(gameName)/1.2)*(Math.log(setsPlayed))))));
+        return Math.round(1 + (1.3 / (1+((8 - playerTierMap.get(gameName)/1.2)*(Math.log(setsPlayed))))));
     }
 
     // Integer currPoints = this.playerPointsMap.get(game).get(0);
@@ -77,7 +69,7 @@ public final class Player implements Comparable<Player> {
 
     //adjust points after bracket match
     public void pointsChangeMatch(String gameName, Player opponent, int resultVal) {
-        Integer playerPoints = this.playerPointsMap.get(gameName);
+        Integer playerPoints = playerPointsMap.get(gameName);
         double expMultiplier = experienceFactorCalculator(gameName);
 
         //expected percentage result of the player
@@ -85,24 +77,23 @@ public final class Player implements Comparable<Player> {
 
         //actual elo diff calculator to determine points gained or lost from the match
         int pointsChange = (int) (40 * (resultVal - expectedResult) * expMultiplier);
-
-        Integer matchPointsFinal = this.changePointsMatchHelper(gameName, pointsChange);
+        Integer matchPointsFinal = changePointsMatchHelper(gameName, pointsChange);
         tournamentMatchesSum.merge(gameName, matchPointsFinal, Integer::sum);
 
     }
 
     //adjust points after a Player's tournament run is over
-    public void finalPointsChange(String gameName, int finalChange) {
-        Integer matchesPointsSum = this.tournamentMatchesSum.get(gameName);
-        this.tempPointsValues.merge(gameName, matchesPointsSum + finalChange, Integer::sum);
+    public void finalPointsChange(String gameName, int finalChange, Tournament currentTournament) {
+        Integer matchesPointsSum = tournamentMatchesSum.get(gameName);
+        tempPointsValues.merge(gameName, matchesPointsSum + finalChange, Integer::sum);
+        Integer totalChange = matchesPointsSum + finalChange;
+        pointsChangedHistory.putIfAbsent(currentTournament, new HashMap<>(Map.of(gameName, totalChange)));
     }
-
+    //Adds the previous pre-bracket points to the players' postbracket points outcome
     public void applyFinalPoints(String gameName) {
-        this.playerPointsMap.put(gameName, tempPointsValues.get(gameName));
+        playerPointsMap.put(gameName, Math.max(0, playerPointsMap.get(gameName) + tempPointsValues.get(gameName))); // adds the resulting points to the points map, preventing it from going below 0
         setPlayerTier(gameName);
     }
-
-
 
 
     public void setPlayerTier(String gameName) {
@@ -123,30 +114,81 @@ public final class Player implements Comparable<Player> {
 
     public Integer getPoints(String gameName) { return playerPointsMap.get(gameName); }
 
+    public Integer getPlayerID()  { return playerID; }
+
+    public boolean isPlacementFinalized()  { return placementFinalized; }
 
     //public int getPointsPreTournament() { return pointsPreTournament; }
 
     public String getNickname() { return playerNickname; }
 
-    public Integer getPlayerPlacement(String gameName) { return this.gamePlacementMap.get(gameName); }
+    public Integer getPlayerPlacement(Integer tournamentID, String gameName) { return this.bracketPlacementMap.get(tournamentID).get(gameName); }
 
     public int getTier(String gameName) { return playerPointsMap.get(gameName); }
 
-    public ArrayList<Match> getGameMatchHistory(String gameName) { return this.matchHistory.get(gameName); }
+    public ArrayList<Match> getPlayerBracketMatchHistory(String gameName) { return this.bracketMatchHistory.get(gameName); }
+
+    public int getPointsChangeAfterBracket(Tournament targetTournament, String gameName) { return pointsChangedHistory.get(targetTournament).get(gameName); }
+
+
+    //Returns the W/L record of the player from a particular tournament.
+    public StringBuilder getBracketDetailedRecord(Integer targetTournamentID, String gameName) {
+        StringBuilder returnString = new StringBuilder();
+        try {
+            HashMap<String, ArrayList<Match>> tryOuter = playerTotalMatchHistory.get(targetTournamentID);
+            if (tryOuter == null) throw new IllegalArgumentException("Target tournament not found: " + targetTournamentID);
+            for (Match playedMatch : tryOuter.get(gameName)) {
+                String letterString = (playedMatch.getWinner() == this) ? "Won" : "Lost";
+                returnString.append(playedMatch + " Result: " + letterString +  "\n");
+            }
+        } catch (IllegalArgumentException e) { System.out.println("Tournament not found in player history " + e.getMessage()); }
+        return returnString;
+    }
+
+    //returns the win and loss record of a bracket in stander W
+    public String getBracketWinLossRecord(Integer tournamentID, String gameName) {
+        int winCounter = 0;
+        int lossCounter = 0;
+        try {
+            ArrayList<Match> tryMatches = bracketMatchHistory.get(gameName);
+            if (tryMatches == null) throw new IllegalArgumentException("Target bracket not found: " + gameName);
+            for (Match playedMatch : tryMatches) {
+                if (playedMatch.getWinner() == this) winCounter++;
+                else lossCounter++;
+            }
+        } catch (IllegalArgumentException e) { System.out.println("Tournament not found in player history " + e.getMessage()); }
+
+        //ensures that the correct loss count is attributed to second place after grand finals
+        if (bracketPlacementMap.get(tournamentID).get(gameName) == 2) {
+            if (lossCounter == 1) lossCounter++;
+            else lossCounter += 2;
+        }
+        return String.format("| Record: Wins:%2d | Losses:%2d", winCounter, lossCounter);
+    }
+
+    public int getPlayerPoints(String gameName) { return playerPointsMap.get(gameName); }
 
     //If the match history list doesn't exist, make a new one and add it. Otherwise, add it to the existing list.
-    public void updateMatchHistory(String gameName, Match addingMatch) { matchHistory.computeIfAbsent(gameName, p -> new ArrayList<>()).add(addingMatch); }
+    public void updateBracketMatchHistory(String gameName, Match addingMatch) { bracketMatchHistory.computeIfAbsent(gameName, p -> new ArrayList<>()).add(addingMatch); }
 
+
+    //Updates a player's bracket result to their total match record.
+    public void updatePlayerTotalMatchHistory(Integer tournamentID, String gameName) { playerTotalMatchHistory.computeIfAbsent(tournamentID,p->new HashMap<>()).put(gameName, bracketMatchHistory.get(gameName)); }
 
     //public static void setRealName(String real_name) { Player.realName = real_name; }
 
-    //Actually sets players points and replaces the previous value.
-    public void setPlayerPoints( String gameName, Integer newPoints) {
-        this.tempPointsValues.put(gameName, newPoints);
+    public void setPlayerPoints(String gameName, Integer newPoints) {
+        this.playerPointsMap.put(gameName, newPoints);
         this.setPlayerTier(gameName);
     }
 
-    public void setPlayerPlacement(String gameName, Integer position) { this.gamePlacementMap.put(gameName, position); }
+    public void setPlayerPlacement(Integer tournamentID, String gameName, Integer position) { bracketPlacementMap.computeIfAbsent(tournamentID, k -> new HashMap<>()).put(gameName, position); }
+
+    public void setPlacementFinalized(boolean finalized) { this.placementFinalized = finalized; }
+
+    public HashMap<Tournament, HashMap<String, Integer>> getPointsChangedHistory() { return pointsChangedHistory; }
+
+
 
     @Override
     public String toString() {
@@ -162,8 +204,6 @@ public final class Player implements Comparable<Player> {
     }
 
 }
-
-
 
 
 /* Players to enter for SF6
