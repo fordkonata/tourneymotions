@@ -187,79 +187,84 @@ public class Bracket {
     }
 
 
+    // Generates the correct order for assigning players to their correct pools
+    // This is to keep the tournament well balanced, ensuring the strongest players don't meet until the latest possible time
+    private int[] generatePoolOrder(int poolCount) {
+        if (poolCount == 1) return new int[]{1};
+        int[] prev = generatePoolOrder(poolCount / 2);
+        int[] result = new int[poolCount];
+        for (int i = 0; i < prev.length; i++) {
+            result[i * 2] = prev[i];
+            result[i * 2 + 1] = poolCount + 1 - prev[i];
+        }
+        return result;
+    }
+
     //FINISHED
     private void seedPrelimMatches(ArrayList<Player> sortedPlayers, int poolCount, int prelimCount) {
-        int currentPoolMark = 1;
         int[] subOrder = {1, 5, 7, 3, 4, 6, 8, 2};
+        int[] poolOrder = generatePoolOrder(poolCount);
         int subOrderCount = 0;
+        int poolOrderCount = 0;
 
         for (int i = 0; i < prelimCount * 2; i += 2) {
+            int currentPoolMark = poolOrder[poolOrderCount];
+
             if (!seededPoolMap.containsKey(currentPoolMark)) {
                 seededPoolMap.put(currentPoolMark, new Pool("Pool " + currentPoolMark, this, 1));
             }
 
             int matchPosition = 100 + subOrder[subOrderCount];
 
-            // the higher seed always enters position 1, the lower seeded player enters position 2
             Match prelimMatch = new Match(sortedPlayers.get(i + 1), sortedPlayers.get(i), matchPosition, seededPoolMap.get(currentPoolMark), "preliminaries", this);
             seededPoolMap.get(currentPoolMark).addPlayInMatch(prelimMatch);
-            // reset pool-level marks and increment the subPosition index.
-            currentPoolMark++;
-            if (currentPoolMark > poolCount) {
-                currentPoolMark = 1;
+
+            poolOrderCount++;
+            if (poolOrderCount >= poolCount) {
+                poolOrderCount = 0;
                 subOrderCount++;
             }
         }
     }
 
-    //EDIT
-    private void seedFirstRoundMatches(ArrayList<Player> sortedPlayers, int poolCount, int singleSeededPlayers) {
+
+    //FINISHED
+    private void seedFirstRoundMatches(ArrayList<Player> sortedPlayers, int numberOfPools, int singleSeededPlayers) {
         int playerLeft = singleSeededPlayers * 2;
         int playerRight = sortedPlayers.size() - 1;
         int currentPoolMark = 1;
         int[] subOrder = {1, 5, 7, 3, 4, 6, 8, 2};
+        int[] poolOrder = generatePoolOrder(numberOfPools);
         int subOrderCount = 0;
+        int poolOrderCount = 0;
         int roundVal = 100;
 
-
-        // FIX THIS LOOP
         while (playerLeft < playerRight) {
+            currentPoolMark = poolOrder[poolOrderCount];
 
-            if (!seededPoolMap.containsKey(currentPoolMark)) {
+            if (!seededPoolMap.containsKey(currentPoolMark))
                 seededPoolMap.put(currentPoolMark, new Pool("Pool " + currentPoolMark, this, 1));
-            }
 
             if (!seededPoolMap.get(currentPoolMark).getPreliminaries().isEmpty()) roundVal = 200;
             else roundVal = 100;
 
-
             int matchPosition = roundVal + subOrder[subOrderCount];
 
             Match newMatch;
-            // Create single seeded matches when necessary
             if (singleSeededPlayers > 0) {
                 newMatch = new Match(sortedPlayers.get(playerRight), matchPosition, 1, seededPoolMap.get(currentPoolMark), "winners", this);
-                //make sure to add match the players' history
-//                sortedPlayers.get(playerRight).updateBracketMatchHistory(newMatch.getMatchGame(), newMatch);
                 singleSeededPlayers--;
             } else {
                 newMatch = new Match(sortedPlayers.get(playerRight), sortedPlayers.get(playerLeft), matchPosition, seededPoolMap.get(currentPoolMark), "winners", this);
                 playerLeft++;
-//                sortedPlayers.get(playerRight).updateBracketMatchHistory(newMatch.getMatchGame(), newMatch);
-//                sortedPlayers.get(playerLeft).updateBracketMatchHistory(newMatch.getMatchGame(), newMatch);
-                //make sure to add match the players' history
             }
             seededPoolMap.get(currentPoolMark).addWinnersMatch(newMatch);
-
-            //scalable call used to keep track of the number of initial matches in each pool
             seededPoolMap.get(currentPoolMark).incrementInitialPoolSize();
 
-            //move on to the next lowest player, and the next highest player
-
             playerRight--;
-            currentPoolMark++;
-            if (currentPoolMark > poolCount) {
-                currentPoolMark = 1;
+            poolOrderCount++;
+            if (poolOrderCount >= numberOfPools) {
+                poolOrderCount = 0;
                 subOrderCount++;
             }
         }

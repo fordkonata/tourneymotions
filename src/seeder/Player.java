@@ -24,7 +24,7 @@ public final class Player implements Comparable<Player> {
     private final HashMap<Integer, HashMap<String, Integer>> bracketPlacementMap = new HashMap<>(); //sorts player's placement by tournamentID and game bracket
     private final Random random = new Random();
     private boolean placementFinalized = false;
-    private final HashMap<String, Integer> tournamentMatchesSum = new HashMap<>(); //holds the sum of the player's points until the bracket is over
+    private final HashMap<String, Integer> bracketPointsSumMap = new HashMap<>(); //holds the sum of the player's points until the bracket is over
     private final Integer playerID; //maybe make a global field for player_id, so I can cast rand to it?
 
 
@@ -78,13 +78,13 @@ public final class Player implements Comparable<Player> {
         //actual elo diff calculator to determine points gained or lost from the match
         int pointsChange = (int) (40 * (resultVal - expectedResult) * expMultiplier);
         Integer matchPointsFinal = changePointsMatchHelper(gameName, pointsChange);
-        tournamentMatchesSum.merge(gameName, matchPointsFinal, Integer::sum);
+        bracketPointsSumMap.merge(gameName, matchPointsFinal, Integer::sum);
 
     }
 
     //adjust points after a Player's tournament run is over
     public void finalPointsChange(String gameName, int finalChange, Tournament currentTournament) {
-        Integer matchesPointsSum = tournamentMatchesSum.get(gameName);
+        Integer matchesPointsSum = bracketPointsSumMap.get(gameName);
         tempPointsValues.merge(gameName, matchesPointsSum + finalChange, Integer::sum);
         Integer totalChange = matchesPointsSum + finalChange;
         pointsChangedHistory.putIfAbsent(currentTournament, new HashMap<>(Map.of(gameName, totalChange)));
