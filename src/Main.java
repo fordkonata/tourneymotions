@@ -2,14 +2,16 @@
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.sql.Connection;
+import java.sql.DriverManager;
 import java.util.HashMap;
 
-import seeder.Bracket;
-import seeder.Player;
-import seeder.Tournament;
+import backend.Bracket;
+import backend.Player;
+import backend.Tournament;
 import java.util.ArrayList;
 
-import seeder.Pool;
+import backend.Pool;
 
 /***TODO AFTER INITIAL TESTING COMPONENTS IS COMPLETE
 *  Try Modules/libraries:
