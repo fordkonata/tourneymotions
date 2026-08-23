@@ -1,0 +1,13 @@
+drop table if exists points_changed_history cascade;
+drop table if exists player_bracket_placements_map cascade;
+drop table if exists player_tier_map cascade;
+drop table if exists player_points_map cascade;
+drop table if exists player_total_match_history cascade;
+drop table if exists matches cascade;
+drop table if exists pools cascade;
+drop table if exists bracket_entrants cascade;
+drop table if exists brackets cascade;
+drop table if exists tournament_entrants cascade;
+drop table if exists tournaments cascade;
+drop table if exists players cascade;
+drop table if exists games cascade;
