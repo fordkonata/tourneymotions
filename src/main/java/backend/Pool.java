@@ -23,6 +23,7 @@ public class Pool {
     private boolean losersFinished = false;
     private Long poolID;
     private Match losersFinalMatch;
+    private final PoolQueries poolQueries;
     private final NavigableMap<Integer, Match> winnersSide = new TreeMap<>(); //contains all winners matches, sorted by match position
     private final NavigableMap<Integer, Match> losersSide = new TreeMap<>(); //contains all losers matches, sorted by match position
     private final NavigableMap<Integer, Match> preliminaries = new TreeMap<>(); //contains all prelim matches, sorted by match position
@@ -37,7 +38,8 @@ public class Pool {
         this.poolName = poolName;
         this.parentBracket = bracket;
         this.poolStage = stage;
-        poolQueries.insertPoolToDB(bracket.getParentTournament().getTournamentID(), bracket.getGetBracketID(), this);
+        this.poolQueries = poolQueries;
+        this.poolQueries.insertPoolToDB(bracket.getParentTournament().getTournamentID(), bracket.getGetBracketID(), this);
     }
 
 
@@ -394,6 +396,9 @@ public class Pool {
         winner.pointsChangeMatch(gameName, loser, 1);
         loser.pointsChangeMatch(gameName, winner, 0);
 
+        matchQueries.setMatchWinnerInDB(prevMatch.getMatchId(), winner.getPlayerID());
+        matchQueries.setMatchLoserInDB(prevMatch.getMatchId(), loser.getPlayerID());
+
         // preliminary winner routes directly to round 1 at the same sub-position
         if (prevMatch.getMatchSide().equals("preliminaries")) {
 
@@ -463,10 +468,13 @@ public class Pool {
         prevMatch.getWinner().pointsChangeMatch(gameName, loser, 1);
         prevMatch.getLoser().pointsChangeMatch(gameName, winner, 0);
 
+        matchQueries.setMatchWinnerInDB(prevMatch.getMatchId(), winner.getPlayerID());
+        matchQueries.setMatchLoserInDB(prevMatch.getMatchId(), loser.getPlayerID());
+
         // preliminaries drop to LR1
         if (prevMatch.getMatchSide().equals("preliminaries")) {
             losersMatchPosition = findPrelimLosersPosition(prevMatch);
-            Match newLosersMatch = new Match(loser, losersMatchPosition, 2, this, "losers", parentBracket);
+            Match newLosersMatch = new Match(loser, losersMatchPosition, 2, this, "losers", parentBracket, matchQueries);
             newLosersMatch.setActualMatchRound(1);
             addLosersMatch(newLosersMatch);
             return;

@@ -6,6 +6,7 @@ create table players (
 );
 
 
+--might need to change this to include tournamentID or bracketID before production.
 create table player_total_match_history (
     player_id bigint not null,
     match_id bigint not null,
@@ -51,6 +52,7 @@ create table player_bracket_placements_map (
     player_id bigint not null,
     tournament_id bigint not null,
     game_name varchar(84),
+    placement int,
 
     primary key (player_id, tournament_id, game_name),
 

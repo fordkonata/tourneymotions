@@ -27,7 +27,7 @@ public class PoolQueries {
 
     public boolean insertPoolToDB(long tournamentID, long bracketID, Pool pool)  {
         try {
-            String pString = "insert into brackets (tournament_id, bracket_id, pool_id,) VALUES (?,?,?)";
+            String pString = "insert into brackets (tournament_id, bracket_id, pool_id, stage_number, pool_position) VALUES (?,?,?)";
             PreparedStatement poolState = connection.prepareStatement(pString);
             poolState.setLong(1, tournamentID);
             poolState.setLong(2, bracketID);

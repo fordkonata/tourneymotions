@@ -58,14 +58,10 @@ public class Main {
                             System.out.println("Enter Tournament Name: \n");
                             String tLine = null;
 
-                            try {
-                                tLine = buffer.readLine();
-                            } catch (IOException e) {
-                                throw new RuntimeException(e);
-                            }
+                            try { tLine = buffer.readLine(); }
+                            catch (IOException e) { throw new RuntimeException(e); }
 
                             Tournament newTournament = new Tournament(tLine, tournamentQueries);
-                            tournamentQueries.insertTournamentToDB(newTournament);
                             tournamentMap.put(tLine, newTournament);
                             System.out.println("Created new tournament: " + tLine); // this might end up as null?
                             break;
@@ -73,11 +69,8 @@ public class Main {
                             System.out.println("Enter Tournament Name: \n");
                             String tString = null;
 
-                            try {
-                                tString = buffer.readLine();
-                            } catch (IOException e) {
-                                throw new RuntimeException(e);
-                            }
+                            try { tString = buffer.readLine();}
+                            catch (IOException e) { throw new RuntimeException(e); }
 
                             Tournament retrievedTournament = tournamentMap.get(tString);
 
@@ -100,9 +93,8 @@ public class Main {
                                         System.out.println("Enter Bracket Name: ");
                                         String bracketName = null;
 
-                                        try {
-                                            bracketName = buffer.readLine();
-                                        } catch (IOException e) {
+                                        try { bracketName = buffer.readLine(); }
+                                        catch (IOException e) {
                                             System.out.println("Input invalid!!");
                                             throw new RuntimeException(e);
                                         }
@@ -143,13 +135,12 @@ public class Main {
                                         System.out.println("Enter the game name of the bracket: ");
                                         String newBracketLine = null;
 
-                                        try {
-                                            newBracketLine = buffer.readLine();
-                                        } catch (IOException e) {
-                                            throw new RuntimeException(e);
-                                        }
+                                        try { newBracketLine = buffer.readLine(); }
+                                        catch (IOException e) { throw new RuntimeException(e); }
 
-                                        retrievedTournament.createBracket(newBracketLine, playerList, "Street Fighter 6", bracketQueries);
+                                        retrievedTournament.createBracket(newBracketLine, playerList, "Street Fighter 6",
+                                                bracketQueries, poolQueries, matchQueries);
+
                                         System.out.println(tournamentMap.get(tString).findBracket(newBracketLine));
                                         System.out.println("Tournament Bracket Created!");
                                         break;
@@ -157,11 +148,8 @@ public class Main {
                                         System.out.println("Enter the game name: ");
                                         String showGameBracketString = null;
 
-                                        try {
-                                            showGameBracketString = buffer.readLine();
-                                        } catch (IOException e) {
-                                            throw new RuntimeException(e);
-                                        }
+                                        try { showGameBracketString = buffer.readLine(); }
+                                        catch (IOException e) { throw new RuntimeException(e); }
 
                                         Bracket showGameRetrievedBracket = retrievedTournament.findBracket(showGameBracketString);
                                         System.out.println(showGameRetrievedBracket);
@@ -170,11 +158,8 @@ public class Main {
                                         System.out.println("Enter the game name: ");
                                         String simulateGameBracketString = null;
 
-                                        try {
-                                            simulateGameBracketString = buffer.readLine();
-                                        } catch (IOException e) {
-                                            throw new RuntimeException(e);
-                                        }
+                                        try { simulateGameBracketString = buffer.readLine(); }
+                                        catch (IOException e) { throw new RuntimeException(e); }
 
                                         Bracket simulateRetrievedBracket = retrievedTournament.findBracket(simulateGameBracketString);
                                         System.out.println("Simulating bracket... ");
@@ -209,9 +194,8 @@ public class Main {
                         default:
                             System.out.println("Please enter a number from 0-4.");
                     }
-                } catch (IOException | InterruptedException e) {
-                    throw new RuntimeException(e);
                 }
+                catch (IOException | InterruptedException e) { throw new RuntimeException(e); }
             }
         }
         catch (Exception e) { throw new RuntimeException(e); }

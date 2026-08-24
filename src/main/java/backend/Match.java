@@ -16,6 +16,7 @@ public final class Match {
     private final String matchGame;
     private final String matchSide;
     private final Pool parentPool; // need to organize at set a reference for parent pool probably need to shift some things
+    private final MatchQueries matchQueries;
     private final Bracket parentBracket;
 
     //constructor for placeholder matches
@@ -25,7 +26,8 @@ public final class Match {
         this.matchPosition = matchPosition;
         this.parentBracket = bracket;
         this.matchGame = parentPool.parentBracket.getGameName();
-        matchQueries.insertMatch(pool.getPoolID(), this);
+        this.matchQueries = matchQueries;
+        this.matchQueries.insertMatch(pool.getPoolID(), this);
     }
 
     //Match constructor for 2 players at the same time
@@ -37,7 +39,8 @@ public final class Match {
         this.matchSide = side;
         this.parentBracket = bracket;
         this.matchGame = parentPool.parentBracket.getGameName();
-        matchQueries.insertMatch(pool.getPoolID(), this);
+        this.matchQueries = matchQueries;
+        this.matchQueries.insertMatch(pool.getPoolID(), this);
     }
 
     //Match constructor for 1 player at a time if matches are asynchronized
@@ -49,7 +52,8 @@ public final class Match {
         this.matchPosition = matchPosition;
         this.parentBracket = bracket;
         this.matchGame = parentPool.parentBracket.getGameName();
-        matchQueries.insertMatch(pool.getPoolID(), this);
+        this.matchQueries = matchQueries;
+        this.matchQueries.insertMatch(pool.getPoolID(), this);
     }
 
 
@@ -78,24 +82,30 @@ public final class Match {
     public void setPlayer1(Player p1) {
         this.player1 = p1;
         p1.updateBracketMatchHistory(matchGame, this);
+        matchQueries.setMatchPlayer(matchId, 1, p1.getPlayerID());
     }
 
     public void setPlayer2(Player p2) {
         this.player2 = p2;
         player2.updateBracketMatchHistory(matchGame, this);
+        matchQueries.setMatchPlayer(matchId, 2, p2.getPlayerID());
     }
 
 
 
-    public void setWinner(Player winner) {
+    public void setWinnerAndLoser(Player winner) {
         if (winner == player1) {
             this.winner = player1;
             this.loser = player2;
+            matchQueries.setMatchWinnerInDB(matchId, player1.getPlayerID());
+            matchQueries.setMatchLoserInDB(matchId, player2.getPlayerID());
             return;
         }
         else if (winner == player2) {
             this.winner = player2;
             this.loser = player1;
+            matchQueries.setMatchWinnerInDB(matchId, player2.getPlayerID());
+            matchQueries.setMatchLoserInDB(matchId, player1.getPlayerID());
             return;
         }
         System.out.println("Player not in  match");
