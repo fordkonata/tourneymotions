@@ -11,14 +11,26 @@ public final class Match {
     private Player player1 = null;
     private Player winner = null;
     private Player loser;
-    private Long matchId;
+    private Long player1FromDBID = null;
+    private Long player2FromDBID = null;
+    private Long winnerFromDBID = null;
+    private Long loserFromDBID = null;
+    private Long matchID;
     private int actualMatchRound = 1;
-    private final String matchGame;
-    private final String matchSide;
-    private final Pool parentPool; // need to organize at set a reference for parent pool probably need to shift some things
+    private String matchGame;
+    private String matchSide;
+    private Pool parentPool; // need to organize at set a reference for parent pool probably need to shift some things
     private final MatchQueries matchQueries;
-    private final Bracket parentBracket;
+    private Bracket parentBracket;
 
+
+    //match constructor to retrieve a match from the DB
+    public Match(long matchId, int matchPosition, String matchSide, MatchQueries matchQueries) { // constructor use exclusively when reconstructing an existing match from a DB
+        this.matchID = matchId;
+        this.matchPosition = matchPosition;
+        this.matchSide = matchSide;
+        this.matchQueries = matchQueries;
+    }
     //constructor for placeholder matches
     public Match(Integer matchPosition, Pool pool, String side, Bracket bracket, MatchQueries matchQueries) {
         this.parentPool = pool;
@@ -34,7 +46,7 @@ public final class Match {
     public Match(Player p1, Player p2, Integer matchPosition, Pool pool, String side, Bracket bracket, MatchQueries matchQueries) {
         this.player1 = p1;
         this.player2 = p2;
-        this.matchPosition = matchPosition;;
+        this.matchPosition = matchPosition;
         this.parentPool = pool;
         this.matchSide = side;
         this.parentBracket = bracket;
@@ -65,7 +77,7 @@ public final class Match {
 
     public Player getLoser() { return this.loser; }
 
-    public Long getMatchId() { return this.matchId; }
+    public Long getMatchID() { return this.matchID; }
 
     public String getMatchSide() { return this.matchSide; }
 
@@ -79,33 +91,46 @@ public final class Match {
 
     public Integer getMatchRound() {return this.matchPosition / 100; }
 
+    public int getActualMatchRound() { return this.actualMatchRound; }
+
     public void setPlayer1(Player p1) {
         this.player1 = p1;
         p1.updateBracketMatchHistory(matchGame, this);
-        matchQueries.setMatchPlayer(matchId, 1, p1.getPlayerID());
+        matchQueries.setMatchPlayer(matchID, 1, p1.getPlayerID());
     }
+
 
     public void setPlayer2(Player p2) {
         this.player2 = p2;
         player2.updateBracketMatchHistory(matchGame, this);
-        matchQueries.setMatchPlayer(matchId, 2, p2.getPlayerID());
+        matchQueries.setMatchPlayer(matchID, 2, p2.getPlayerID());
     }
 
+
+
+    public void setWinnerFromDB(long winner) {winnerFromDBID = winner; }
+
+    public void setLoserFromDB(long loser) { loserFromDBID = loser; }
+
+    public void setPlayer1FromDB(long playerID) { player1FromDBID = playerID; }
+
+
+    public void setPlayer2FromDB(long playerID) { player2FromDBID = playerID; }
 
 
     public void setWinnerAndLoser(Player winner) {
         if (winner == player1) {
             this.winner = player1;
             this.loser = player2;
-            matchQueries.setMatchWinnerInDB(matchId, player1.getPlayerID());
-            matchQueries.setMatchLoserInDB(matchId, player2.getPlayerID());
+            matchQueries.setMatchWinnerInDB(matchID, player1.getPlayerID());
+            matchQueries.setMatchLoserInDB(matchID, player2.getPlayerID());
             return;
         }
         else if (winner == player2) {
             this.winner = player2;
             this.loser = player1;
-            matchQueries.setMatchWinnerInDB(matchId, player2.getPlayerID());
-            matchQueries.setMatchLoserInDB(matchId, player1.getPlayerID());
+            matchQueries.setMatchWinnerInDB(matchID, player2.getPlayerID());
+            matchQueries.setMatchLoserInDB(matchID, player1.getPlayerID());
             return;
         }
         System.out.println("Player not in  match");
@@ -113,13 +138,19 @@ public final class Match {
 
     public void setActualMatchRound(int round) { this.actualMatchRound = round; }
 
-    public int getActualMatchRound() { return this.actualMatchRound; }
+
+    public void setMatchSide(String matchSide) {this.matchSide = matchSide; }
 
     @Override
     public String toString() {
-        return "|| Stage: " + this.parentPool.getPoolStage() + " | " + this.parentPool.poolName + " | " + matchSide + " | " + "Match Position: " + matchPosition + " ||" +
+        return "|| Stage: " + this.parentPool.getPoolStage() + " | " + this.parentPool.getPoolName() + " | " + matchSide + " | " + "Match Position: " + matchPosition + " ||" +
                 "\n|| " + (player1 != null ? player1.getNickname() : "TBD") + " vs. " + (player2 != null ? player2.getNickname() : "TBD") + " ||\n";
     }
 
-    public void setMatchID(long matchId) { this.matchId = matchId; }
+//    public void setMatchID(long matchId) { this.matchId = matchId; }
+
+    public void setMatchPosition(int matchPosition) { this.matchPosition = matchPosition; }
+
+    public void setMatchID(long matchID) { this.matchID = matchID;
+    }
 }

@@ -31,11 +31,11 @@ public class Main {
         BufferedReader buffer  = new BufferedReader((new InputStreamReader(System.in)));
         HashMap<String, Tournament> tournamentMap = new HashMap<>();
         JdbcConnector jdbcConnector = new JdbcConnector();
-        TournamentQueries tournamentQueries = new TournamentQueries(jdbcConnector.getPrimeConnection());
-        BracketQueries bracketQueries = new BracketQueries(jdbcConnector.getPrimeConnection());
-        PoolQueries poolQueries = new PoolQueries(jdbcConnector.getPrimeConnection());
-        MatchQueries matchQueries = new MatchQueries(jdbcConnector.getPrimeConnection());
         PlayerQueries playerQueries = new PlayerQueries(jdbcConnector.getPrimeConnection());
+        TournamentQueries tournamentQueries = new TournamentQueries(jdbcConnector.getPrimeConnection());
+        BracketQueries bracketQueries = new BracketQueries(jdbcConnector.getPrimeConnection(), tournamentQueries, playerQueries);
+        PoolQueries poolQueries = new PoolQueries(jdbcConnector.getPrimeConnection(), bracketQueries, playerQueries);
+        MatchQueries matchQueries = new MatchQueries(jdbcConnector.getPrimeConnection(), playerQueries);
         ArrayList<Player> playerList = populatePlayerList(playerQueries);
 
         try {
@@ -73,11 +73,11 @@ public class Main {
                             catch (IOException e) { throw new RuntimeException(e); }
 
                             Tournament retrievedTournament = tournamentMap.get(tString);
-
                             if (retrievedTournament == null) {
-                                System.out.println("Tournament not found!");
+                                System.out.println("No tournament found with that name.");
                                 break;
                             }
+
                             boolean editLoop = true;
                             while (editLoop) {
                                 System.out.println("1. Show bracket status.");

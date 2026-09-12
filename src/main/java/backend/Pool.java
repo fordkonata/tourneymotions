@@ -13,9 +13,9 @@ import backend.dbconnector.*;
  */
 
 public class Pool {
-    public String poolName = "empty"; //will eventually need another way to identify the pool. Also customizable pool names?????? */
     public Bracket parentBracket;
     public ArrayList<Player> poolPlayers = new ArrayList<>();
+    private String poolName = "Pool";
     private Player winnersFinalist = null;
     private Player losersFinalist = null;
     private boolean prelimsFinished = false;
@@ -32,14 +32,22 @@ public class Pool {
     private int initialPoolSize = 0;
     private final Integer poolStage;
 
-    // this will need to call jdbcConnector to see if id exists.
-
-    public Pool(String poolName, Bracket bracket, Integer stage, PoolQueries poolQueries) {
-        this.poolName = poolName;
-        this.parentBracket = bracket;
+    //default constructor, inserts a new pool into the DB
+    public Pool(String poolName, Bracket parentBracket, Integer stage, PoolQueries poolQueries) {
+        this.parentBracket = parentBracket;
         this.poolStage = stage;
+        this.poolName = poolName;
         this.poolQueries = poolQueries;
-        this.poolQueries.insertPoolToDB(bracket.getParentTournament().getTournamentID(), bracket.getGetBracketID(), this);
+        this.poolQueries.insertPoolToDB(parentBracket.getBracketID(), this);
+    }
+
+    //constructor retrieved directly from DB to retrieve existing pool.
+    public Pool(long poolID, String poolName, Bracket parentBracket, Integer stage, PoolQueries poolQueries) {
+        this.poolID = poolID;
+        this.parentBracket = parentBracket;
+        this.poolStage = stage;
+        this.poolName = poolName;
+        this.poolQueries = poolQueries;
     }
 
 
@@ -55,7 +63,7 @@ public class Pool {
         //if one of the player positions are currntly empty, just add to the other player position
         else if (newWinnersMatch.getP1() != null) newWinnersMatch.getP1().updateBracketMatchHistory(newWinnersMatch.getMatchGame(), newWinnersMatch);
         else if (newWinnersMatch.getP2() != null) newWinnersMatch.getP2().updateBracketMatchHistory(newWinnersMatch.getMatchGame(), newWinnersMatch);
-        parentBracket.getAllMatchesByID().put(newWinnersMatch.getMatchId(), newWinnersMatch);
+        parentBracket.getAllMatchesByID().put(newWinnersMatch.getMatchID(), newWinnersMatch);
     }
 
     public void addLosersMatch(Match newLosersMatch) {
@@ -69,7 +77,7 @@ public class Pool {
         //if one of the player positions are currntly empty, just add to the other player position
         else if (newLosersMatch.getP1() != null) newLosersMatch.getP1().updateBracketMatchHistory(newLosersMatch.getMatchGame(), newLosersMatch);
         else if (newLosersMatch.getP2() != null) newLosersMatch.getP2().updateBracketMatchHistory(newLosersMatch.getMatchGame(), newLosersMatch);
-        parentBracket.getAllMatchesByID().put(newLosersMatch.getMatchId(), newLosersMatch);
+        parentBracket.getAllMatchesByID().put(newLosersMatch.getMatchID(), newLosersMatch);
 
         //detect if the matcch added is the final losers match of the pool. If so, set it to its proper field.
         int winnersRounds = (int) (Math.log(initialPoolSize) / Math.log(2)) + 1;
@@ -90,7 +98,7 @@ public class Pool {
         //if one of the player positions are currntly empty, just add to the other player position
         else if (newPrelimsMatch.getP1() != null) newPrelimsMatch.getP1().updateBracketMatchHistory(newPrelimsMatch.getMatchGame(), newPrelimsMatch);
         else if (newPrelimsMatch.getP2() != null) newPrelimsMatch.getP2().updateBracketMatchHistory(newPrelimsMatch.getMatchGame(), newPrelimsMatch);
-        parentBracket.getAllMatchesByID().put(newPrelimsMatch.getMatchId(), newPrelimsMatch);
+        parentBracket.getAllMatchesByID().put(newPrelimsMatch.getMatchID(), newPrelimsMatch);
     }
 
     public boolean isFinished() { return winnersFinished && losersFinished; }
@@ -106,6 +114,7 @@ public class Pool {
         else allActiveLosersMatches.remove(match.getMatchPosition());
     }
 
+    //Finds the round one losers match position for losers of the first non-prelim winners round
     private Integer findRoundOneLosersPosition(Match match) {
         int prevMatchSubPosition = match.getMatchPosition() % 100;
         Integer losersMatchPosition = 101;
@@ -396,8 +405,8 @@ public class Pool {
         winner.pointsChangeMatch(gameName, loser, 1);
         loser.pointsChangeMatch(gameName, winner, 0);
 
-        matchQueries.setMatchWinnerInDB(prevMatch.getMatchId(), winner.getPlayerID());
-        matchQueries.setMatchLoserInDB(prevMatch.getMatchId(), loser.getPlayerID());
+        matchQueries.setMatchWinnerInDB(prevMatch.getMatchID(), winner.getPlayerID());
+        matchQueries.setMatchLoserInDB(prevMatch.getMatchID(), loser.getPlayerID());
 
         // preliminary winner routes directly to round 1 at the same sub-position
         if (prevMatch.getMatchSide().equals("preliminaries")) {
@@ -468,8 +477,8 @@ public class Pool {
         prevMatch.getWinner().pointsChangeMatch(gameName, loser, 1);
         prevMatch.getLoser().pointsChangeMatch(gameName, winner, 0);
 
-        matchQueries.setMatchWinnerInDB(prevMatch.getMatchId(), winner.getPlayerID());
-        matchQueries.setMatchLoserInDB(prevMatch.getMatchId(), loser.getPlayerID());
+        matchQueries.setMatchWinnerInDB(prevMatch.getMatchID(), winner.getPlayerID());
+        matchQueries.setMatchLoserInDB(prevMatch.getMatchID(), loser.getPlayerID());
 
         // preliminaries drop to LR1
         if (prevMatch.getMatchSide().equals("preliminaries")) {
@@ -628,7 +637,15 @@ public class Pool {
 
     public Integer getPoolNumber() { return Integer.parseInt(poolName.split(" ")[1]); }
 
+    public String getPoolName() { return this.poolName; }
+
     public Long getPoolID() { return poolID; }
+
+    public int getStageNumber() {return poolStage;}
+
+    public int getPoolPosition() {return  Integer.parseInt(poolName.substring(5).trim());}
+
+    public void setPoolID(long poolID) { this.poolID = poolID; }
 
     @Override
     public String toString() {

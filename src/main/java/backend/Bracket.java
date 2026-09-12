@@ -11,34 +11,44 @@ public class Bracket {
     private int bracketAvgPoints = 0;
     private int totalBracketPoolCountMark = 0;
     private int totalLosersRoundsCount = 1;
+    private int bracketTier = 5;
     private Integer currentPoolStageMarker = 1;
     private Player bracketWinner = null;
-    private final int bracketTier = 5;
     private final String gameName;
     private final BracketQueries bracketQueries;
-    private final PoolQueries poolQueries;
-    private final MatchQueries matchQueries;
+    private PoolQueries poolQueries;
+    private MatchQueries matchQueries;
     private final Tournament parentTournament; // this assignment could be problematic might need to change
     private final NavigableMap<Long, Match> allMatchesByID = new TreeMap<>(); //contains and sorts all matches by matchID
-    private final NavigableMap<Integer, Pool> orderedPoolMap = new TreeMap<>(); //initial stage organized pool map. Used only for the first set of pools
-    private final NavigableMap<Integer, Pool> seededPoolMap = new TreeMap<>(); //ordered so higher seeds are at opposing ends of their bracket
-    private final TreeMap<Player, Integer> orderedPlayerMap;
+    private final NavigableMap<Integer, Pool> orderedPoolMap = new TreeMap<>(); //initial stage organized pool map by pool number. Used only for the first set of pools
+    private final NavigableMap<Integer, Pool> seededPoolMap = new TreeMap<>(); //ordered so higher seeds are at opposing ends of their bracket. sorted by pool number, not pool ID
+    private TreeMap<Player, Integer> orderedPlayerMap;
     private final NavigableMap<Integer, NavigableMap<Integer, Pool>> bracketStagesMap = new TreeMap<>(); //contains each map for each pool stage
     private final NavigableMap<Integer, NavigableMap<Integer, Integer>> playersEliminatedCountMap = new TreeMap<>(); //organize and saves the number of eliminated players for each stage.
 //    private NavigableMap<Integer, Integer> totalLosersRoundEachStage = new TreeMap<>();
 
+    //used by the JDBC connector to populate the bracket with the bracket's information
+    public Bracket(long bracketID, Tournament parentTournament, String gameName, int bracketTier, BracketQueries bracketQueries, PoolQueries poolQueries) {
+        this.bracketID = bracketID;
+        this.parentTournament = parentTournament;
+        this.gameName = gameName;
+        this.bracketTier = bracketTier;
+        this.bracketQueries = bracketQueries;
+        this.poolQueries = poolQueries;
+    }
 
-
-    public Bracket(Tournament parentTournament, String bracketName, ArrayList<Player> entrants, int pool_size, String gameName,
+    public Bracket(Tournament parentTournament, String bracketName, ArrayList<Player> entrants, int pool_size, int bracketTier, String gameName,
                    BracketQueries bracketQueries, PoolQueries poolQueries, MatchQueries matchQueries) {
 
         if (entrants.size() < 16) throw new IllegalStateException("The bracket size: " + entrants.size() + "is too small.");
         this.bracketName = bracketName;
         this.parentTournament = parentTournament;
+        this.bracketTier = bracketTier;
         this.gameName = gameName;
+        this.bracketQueries = bracketQueries;
         this.poolQueries = poolQueries;
         this.matchQueries = matchQueries;
-        this.bracketQueries = bracketQueries;
+        String thisGame = this.bracketQueries.getOrCreateGame(gameName);
 
         //Vital, comparator for players sorting by points first, then unique playerID for tiebreakers
         orderedPlayerMap = new TreeMap<>(Comparator.<Player, Integer>comparing(p -> p.getPoints(gameName)).thenComparing(Player::getPlayerID));
@@ -54,6 +64,7 @@ public class Bracket {
 
          createPools(pool_size);
     }
+
 
     // calculate log2 N indirectly for size weight calculation
     private static int log2(int N) {
@@ -101,7 +112,8 @@ public class Bracket {
                 if (goingRight) {
                     seededPoolMap.put(snakeLeft, new Pool("Pool " + snakeLeft, this, 1, poolQueries));
                     seededPoolMap.put(snakeRight, new Pool("Pool " + snakeRight, this, 1, poolQueries));
-                } else {
+                }
+                else {
                     seededPoolMap.put(snakeRight, new Pool("Pool " + snakeRight, this, 1, poolQueries));
                     seededPoolMap.put(snakeLeft, new Pool("Pool " + snakeLeft, this, 1, poolQueries));
                 }
@@ -445,7 +457,7 @@ public class Bracket {
             if(bracketStagesMap.get(currentPoolStageMarker).size() <= 1) {
                 Match grandFinals = new Match(targetPool.getWinnersSideFinalist(), targetPool.getLosersSideFinalist(), 0, targetPool,
                         "winners", this, matchQueries);
-                allMatchesByID.put(grandFinals.getMatchId(), grandFinals);
+                allMatchesByID.put(grandFinals.getMatchID(), grandFinals);
 
                 double expectedResult = (1 / (1 + Math.pow(10, -1 * ((double) (grandFinals.getP1().getPoints(gameName) - grandFinals.getP2().getPoints(gameName)) / 500))));
                 double random = Math.random();
@@ -516,7 +528,7 @@ public class Bracket {
     public void createGrandFinals(Player player1, Player player2, Pool lastPool) {
         Match grandFinals = new Match(player1, player2, 0, lastPool, "winners", this, matchQueries);
 
-        allMatchesByID.put(grandFinals.getMatchId(), grandFinals);
+        allMatchesByID.put(grandFinals.getMatchID(), grandFinals);
 
         //Determine bracket winner and complete the bracket.
         this.finishPlayer(grandFinals.getWinner(), grandFinals);
@@ -581,6 +593,8 @@ public class Bracket {
     public Tournament getParentTournament() { return parentTournament; }
 
     public NavigableMap<Long, Match> getAllMatchesByID() { return allMatchesByID; }
+
+    public long getBracketID() { return bracketID; }
 
     public void setBracketID(long bracketID) { this.bracketID = bracketID; }
 

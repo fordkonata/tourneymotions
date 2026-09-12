@@ -19,6 +19,7 @@ create table brackets (
     bracket_tier int not null
 );
 
+
 --for later use in pre-production build
 create table bracket_entrants (
     bracket_id bigint references brackets(bracket_id) on delete cascade,
@@ -30,13 +31,14 @@ create table pools (
     pool_id bigserial primary key,
     bracket_id bigint not null references brackets(bracket_id) on delete cascade,
     stage_number int not null,
+    pool_name varchar(32) not null,
     pool_position int not null
 );
 
 create table matches (
     match_id bigserial primary key,
     pool_id bigint not null references pools(pool_id) on delete cascade,
-
+    tournament_id bigint not null references tournaments(tournament_id) on delete cascade,
     match_position int,
     match_side varchar(24) not null,
 
@@ -47,5 +49,5 @@ create table matches (
 
     check (match_side in ('winners', 'losers', 'preliminaries')),
 
-    unique (pool_id)
+    unique (pool_id, match_side, match_position)
 );

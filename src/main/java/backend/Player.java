@@ -20,22 +20,30 @@ public final class Player implements Comparable<Player> {
     private final PlayerQueries playerQueries;
     private HashMap <String, Integer> tempPointsValues = new HashMap<>();
     private final HashMap<Tournament, HashMap<String, Integer>> pointsChangedHistory = new HashMap<>();
-    public final HashMap<String, Integer> playerTierMap = new HashMap<>();//holds the player tier for each game of the player.
-    public final HashMap<String, Integer> playerPointsMap = new HashMap<>(); //contains the players points and tier for each game. The first index in a hash value is the points, the second is the tier.
-    private final HashMap<Long, HashMap<String, ArrayList<Match>>> playerTotalMatchHistory = new HashMap<>(); //Sorts the player's match history by tournamentID and game bracket
-    private final HashMap<Long, HashMap<String, Integer>> bracketPlacementMap = new HashMap<>(); //sorts player's placement by tournamentID and game bracket
+    public HashMap<String, Integer> playerTierMap = new HashMap<>();//holds the player tier for each game of the player.
+    public HashMap<String, Integer> playerPointsMap = new HashMap<>(); //contains the players points and tier for each game. The first index in a hash value is the points, the second is the tier.
+    private HashMap<Long, HashMap<String, ArrayList<Long>>> playerTotalMatchHistory = new HashMap<>(); //Sorts the player's match history by tournamentID and game bracket. Saves the match's ID for query
+    private HashMap<Long, HashMap<String, Integer>> bracketPlacementMap = new HashMap<>(); //sorts player's placement by tournamentID and game bracket
     private final HashMap<String, Integer> bracketPointsSumMap = new HashMap<>(); //holds the sum of the player's points until the bracket is over
     private final HashMap<String, ArrayList<Match>> bracketMatchHistory = new HashMap<>();  // Player's match history for a particular bracket
 
 
     // **IMPORTANT NOTE: this.playerPointsMap.get(game).get(0), is the player's points for a specific game. || this.playerPointsMap.get(game).get(1) is the player's Tier for a specific game
-    public Player(String playerName, String playerNickname, PlayerQueries playerQueries) {
-        this.realName = playerName;
+    public Player(String realName, String playerNickname, PlayerQueries playerQueries) {
+        this.realName = realName;
         this.playerNickname = playerNickname;
-        this.playerPointsMap.put("Street Fighter 6", 800);
-        this.playerTierMap.put("Street Fighter 6", 7);
         this.playerQueries = playerQueries;
-        this.playerQueries.insertOnePlayerToDB(this);
+        if (!this.playerQueries.playerExists(this.playerNickname)) {
+            this.playerPointsMap.put("Street Fighter 6", 800);
+            this.playerTierMap.put("Street Fighter 6", 7);
+            this.playerQueries.insertOnePlayerToDB(this);
+        }
+        else {
+            ArrayList<PlayerQueries.PlayerIDPair> retrievedPlayerSet = this.playerQueries.findPlayerByName(playerNickname);
+            this.playerID = retrievedPlayerSet.get(0).playerID();
+            this.playerPointsMap = this.playerQueries.retrievePlayerPoints(this.playerID);
+            this.playerTierMap = this.playerQueries.retrievePlayerTier(this.playerID);
+        }
     }
 
     @Override
@@ -88,6 +96,7 @@ public final class Player implements Comparable<Player> {
     }
 
 
+
     public void setPlayerTier(String gameName) {
         List<Integer> pointThresholds = List.of(1000, 1200, 1400, 1600, 1800, 2000);
         Integer count = 7;
@@ -131,8 +140,8 @@ public final class Player implements Comparable<Player> {
     public StringBuilder getBracketDetailedRecord(Long targetTournamentID, String gameName) {
         StringBuilder returnString = new StringBuilder();
         try {
-            HashMap<String, ArrayList<Match>> tryOuter = playerTotalMatchHistory.get(targetTournamentID);
-            if (tryOuter == null) throw new IllegalArgumentException("Target tournament not found: " + targetTournamentID);
+            HashMap<String, ArrayList<Match>> tryOuter = bracketMatchHistory;
+            if (tryOuter == null) throw new IllegalArgumentException("Target bracket not found: " + targetTournamentID);
             for (Match playedMatch : tryOuter.get(gameName)) {
                 String letterString = (playedMatch.getWinner() == this) ? "Won" : "Lost";
                 returnString.append(playedMatch + " Result: " + letterString +  "\n");
@@ -171,12 +180,15 @@ public final class Player implements Comparable<Player> {
     //If the match history list doesn't exist, make a new one and add it. Otherwise, add it to the existing list.
     public void updateBracketMatchHistory(String gameName, Match addingMatch) {
         bracketMatchHistory.computeIfAbsent(gameName, p -> new ArrayList<>()).add(addingMatch);
-        playerQueries.updateTotalMatchHistory(this, addingMatch);
     }
 
 
-    //Updates a player's bracket result to their total match record.
-    public void updatePlayerTotalMatchHistory(Long tournamentID, String gameName) { playerTotalMatchHistory.computeIfAbsent(tournamentID,p->new HashMap<>()).put(gameName, bracketMatchHistory.get(gameName));}
+    //Updates a player's bracket result to their total match record, and saves the ID in the total match history
+    public void updatePlayerTotalMatchHistory(Long tournamentID, String gameName) {
+        ArrayList<Long> matchIDList = new ArrayList<>();
+        for (Match match : bracketMatchHistory.get(gameName)) matchIDList.add(match.getMatchID());
+        playerTotalMatchHistory.computeIfAbsent(tournamentID, p -> new HashMap<>()).put(gameName, matchIDList);
+    }
 
     public void setPlayerPoints(String gameName, Integer newPoints) {
         this.playerPointsMap.put(gameName, newPoints);

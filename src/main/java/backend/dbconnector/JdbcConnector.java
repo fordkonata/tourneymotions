@@ -100,59 +100,6 @@ public class JdbcConnector {
     }
 
 
-    public void insertPlayerToDB(ArrayList<Player> playerList) {
-        String fetchTournamentEntrants = "select player_nickname from players* ";
-        String url = "jdbc:postgresql://localhost:5432/bracket_test2";
-        String username = "postgres";
-        String password = "fcoder";
-
-        try {
-            Connection con = DriverManager.getConnection(url, username, password);
-            String insertToGame = "insert into games (game_name, game_id) VALUES (?, ?)";
-            String insertToPlayers = "insert into players (playerID, player_nickname) VALUES (?,?)";
-            String insertPlayerPointsMap = "insert into player_points_map (player_id, game_name, points) VALUES (?,?,?)";
-            String insertPlayerTierMap = "insert into player_tier_map (player_id, game_name, tier) VALUES (?,?,?)";
-
-            PreparedStatement pState = con.prepareStatement(insertToPlayers);
-            PreparedStatement pPointsState = con.prepareStatement(insertPlayerPointsMap);
-            PreparedStatement pTierState = con.prepareStatement(insertPlayerTierMap);
-            PreparedStatement gameState = con.prepareStatement(insertToGame);
-
-            gameState.setString(1, "Street Fighter 6");
-            gameState.setInt(2, 1);
-            gameState.executeUpdate();
-
-            for (Player player : playerList) {
-                pState.setInt(1, player.getPlayerID());
-                pState.setString(2, player.getNickname());
-
-                pPointsState.setInt(1, player.getPlayerID());
-                pPointsState.setString(2,"Street Fighter 6");
-                pPointsState.setInt(3, player.getPlayerPoints("Street Fighter 6"));
-
-                pTierState.setInt(1, player.getPlayerID());
-                pTierState.setString(2, "Street Fighter 6");
-                pTierState.setInt(3, player.getTier("Street Fighter 6"));
-
-
-                int rowsAffected = pState.executeUpdate();
-                int affected2 = pPointsState.executeUpdate();
-                int affected3 = pTierState.executeUpdate();
-                System.out.println("Successfully inserted " + rowsAffected + " player.");
-                System.out.println("Successfully inserted " + affected2 + " points.");
-                System.out.println("Successfully inserted " + affected3 + " tier.");
-            }
-
-            Statement statement = con.createStatement();
-            ResultSet result = statement.executeQuery(fetchTournamentEntrants);
-            while (result.next()) {
-                System.out.println(result.getString("player_nickname"));
-            }
-        }
-        catch (SQLException e) { e.printStackTrace(); }
-
-    }
-
 
     public Connection getPrimeConnection() { return primeConnection; }
 
