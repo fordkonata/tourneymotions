@@ -3,4 +3,4 @@ The main branch of this project can correctly seed and simulate a full bracket w
 for testing.
 
 
-**ATTENTION: No part of this repository is to be reproduced without permission for commercial purposes. 
+No part of this repository is to be reproduced or reused without permission for commercial purposes. 
